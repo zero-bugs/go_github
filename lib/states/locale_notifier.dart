@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:gogithub/common/global.dart';
 
 import 'user_profile_notifier.dart';
 

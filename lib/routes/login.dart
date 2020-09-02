@@ -35,10 +35,11 @@ class _LoginRouteState extends State<LoginRoute> {
   @override
   Widget build(BuildContext context) {
     var gm = GmLocalizations.of(context);
+    Fimber.d("login form global key:$_formKey");
     return Scaffold(
       appBar: AppBar(title: Text(gm.login)),
       body: Padding(
-        padding: const EdgeInsets.all(16.0),
+        padding: const EdgeInsets.all(10.0),
         child: Form(
           key: _formKey,
           autovalidate: true,
@@ -58,8 +59,8 @@ class _LoginRouteState extends State<LoginRoute> {
                 },
               ),
               TextFormField(
-                controller: _pwdController,
                 autofocus: !_nameAutoFocus,
+                controller: _pwdController,
                 decoration: InputDecoration(
                   labelText: gm.password,
                   hintText: gm.password,
@@ -99,13 +100,14 @@ class _LoginRouteState extends State<LoginRoute> {
   }
 
   void _onLogin() async {
-    if ((_formKey.currentContext as FormState).validate()) {
+    if ((_formKey.currentState as FormState).validate()) {
       showLoading(context);
       User user;
       try {
         user = await GitApi(context)
             .login(_unameController.text, _pwdController.text);
         // after login, page will build, update user but not trigger update all widget
+        Fimber.d("user info:${user?.toJson()}");
         Provider.of<UserModel>(context, listen: false).user = user;
       } catch (e) {
         Fimber.w("obtain user info failed", ex: e);
@@ -115,10 +117,12 @@ class _LoginRouteState extends State<LoginRoute> {
           showToast(e.toString());
         }
       } finally {
+        // hide loading box
         Navigator.of(context).pop();
       }
 
       if (user != null) {
+        // back
         Navigator.of(context).pop();
       }
     }

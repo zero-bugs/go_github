@@ -35,7 +35,7 @@ class _RepoItemState extends State<RepoItem> {
               ListTile(
                 dense: true,
                 leading: gmAvatar(
-                  widget.repo.owner.avaterUrl,
+                  widget.repo.owner.avatar_url,
                   width: 24.0,
                   borderRadius: BorderRadius.circular(12),
                 ),
@@ -53,7 +53,7 @@ class _RepoItemState extends State<RepoItem> {
                   children: <Widget>[
                     Text(
                       widget.repo.fork
-                          ? widget.repo.fullName
+                          ? widget.repo.full_name
                           : widget.repo.name,
                       style: TextStyle(
                         fontSize: 15,
@@ -109,11 +109,16 @@ class _RepoItemState extends State<RepoItem> {
               var children = <Widget>[
                 Icon(Icons.star),
                 Text(" " +
-                    widget.repo.stargazersCount
+                    widget.repo.stargazers_count
+                        .toString()
+                        .padRight(paddingWidth)),
+                Icon(Icons.info_outline),
+                Text(" " +
+                    widget.repo.open_issues_count
                         .toString()
                         .padRight(paddingWidth)),
                 Icon(CustomIcons.fork),
-                Text(widget.repo.forksCount.toString().padRight(paddingWidth)),
+                Text(widget.repo.forks_count.toString().padRight(paddingWidth)),
               ];
 
               if (widget.repo.fork) {

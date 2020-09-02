@@ -35,7 +35,7 @@ class Global {
   // is release version or not
   static bool get isRelease => bool.fromEnvironment(Env.DART_VM_PRODUCT);
 
-  static init() async {
+  static Future init() async {
     // log init
     Fimber.plantTree(DebugTree());
 

@@ -17,5 +17,5 @@ Map<String, dynamic> _$CacheConfigToJson(CacheConfig instance) =>
     <String, dynamic>{
       'enable': instance.enable,
       'maxAge': instance.maxAge,
-      'maxCount': instance.maxCount
+      'maxCount': instance.maxCount,
     };

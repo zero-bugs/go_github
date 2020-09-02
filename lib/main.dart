@@ -1,17 +1,4 @@
-import 'package:fimber/fimber.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:gogithub/common/global.dart';
-import 'package:gogithub/l10n/localization_intl.dart';
-import 'package:gogithub/routes/home_page.dart';
-import 'package:gogithub/routes/language.dart';
-import 'package:gogithub/routes/login.dart';
-import 'package:gogithub/routes/route_keys.dart';
-import 'package:gogithub/routes/theme.dart';
-import 'package:gogithub/states/locale_notifier.dart';
-import 'package:gogithub/states/theme_notifier.dart';
-import 'package:gogithub/states/user_notifier.dart';
-import 'package:provider/provider.dart';
+import 'index.dart';
 
 void main() => Global.init().then((e) => runApp(MyApp()));
 
@@ -21,9 +8,9 @@ class MyApp extends StatelessWidget {
     Fimber.d("begin to render app.");
     return MultiProvider(
       providers: [
-        Provider<ThemeModel>(create: (_) => ThemeModel()),
-        Provider<UserModel>(create: (_) => UserModel()),
-        Provider<UserModel>(create: (_) => UserModel()),
+        ChangeNotifierProvider<ThemeModel>.value(value: ThemeModel()),
+        ChangeNotifierProvider<UserModel>.value(value: UserModel()),
+        ChangeNotifierProvider<LocaleModel>.value(value: LocaleModel()),
       ],
       child: Consumer2<ThemeModel, LocaleModel>(
         builder: (BuildContext context, themeModel, localeModel, Widget child) {

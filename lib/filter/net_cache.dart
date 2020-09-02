@@ -2,6 +2,7 @@ import 'dart:collection';
 
 import 'package:dio/dio.dart';
 import 'package:gogithub/common/global.dart';
+import 'package:gogithub/index.dart';
 
 class CacheObject {
   Response response;
@@ -19,8 +20,13 @@ class CacheObject {
   int get hashCode => response.realUri.hashCode;
 
   bool isExpire() {
-    return (DateTime.now().millisecondsSinceEpoch - this.timeStamp) / 1000 <
+    return (DateTime.now().millisecondsSinceEpoch - this.timeStamp) / 1000 >=
         Global.profile.cache.maxAge;
+  }
+
+  @override
+  String toString() {
+    return 'CacheObject{response: $response, timeStamp: $timeStamp}';
   }
 }
 
@@ -45,7 +51,8 @@ class NetCacheInterceptor extends Interceptor {
         options.method.toLowerCase() == 'get') {
       String key = options.extra['cacheKey'] ?? options.uri.toString();
       var ob = cache[key];
-      if (ob ?? ob.isExpire()) {
+      Fimber.d("cache object:$ob");
+      if (ob != null && !ob.isExpire()) {
         return cache[key].response;
       } else {
         cache.remove(key);

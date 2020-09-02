@@ -32,7 +32,6 @@ class _HomeRouteState extends State<HomeRoute> {
 
   Widget _buildBody() {
     UserModel userModel = Provider.of<UserModel>(context);
-    Fimber.d("begin to print _buildBody.$userModel");
     if (!userModel.isLogin) {
       // user has not login in yet.
       return Center(
@@ -45,6 +44,7 @@ class _HomeRouteState extends State<HomeRoute> {
       // has login, then show project list
       return InfiniteListView<Repo>(
         onRetrieveData: (int page, List<Repo> items, bool refresh) async {
+          Fimber.d("begin to get repos info.");
           var data = await GitApi(context).getRepos(
             refresh: refresh,
             queryParameters: {
@@ -65,7 +65,9 @@ class _HomeRouteState extends State<HomeRoute> {
 }
 
 class MyDrawer extends StatelessWidget {
-  const MyDrawer({Key key}) : super(key: key);
+  const MyDrawer({
+    Key key,
+  }) : super(key: key);
 
   @override
   Widget build(BuildContext context) {
@@ -77,12 +79,53 @@ class MyDrawer extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: <Widget>[
             _buildHeader(),
-            Expanded(
-              child: _buildMenus(),
-            )
+            Expanded(child: _buildMenus()),
           ],
         ),
       ),
+    );
+  }
+
+  //construct menu
+  Widget _buildHeader() {
+    return Consumer<UserModel>(
+      builder: (BuildContext context, UserModel userModel, Widget child) {
+        Fimber.d("user info:${userModel?.user?.toJson()}");
+        return GestureDetector(
+          child: Container(
+            color: Theme.of(context).primaryColor,
+            padding: EdgeInsets.only(top: 40, bottom: 20),
+            child: Row(
+              children: <Widget>[
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: ClipOval(
+                    child: userModel.isLogin
+                        ? gmAvatar(userModel.user.avatar_url, width: 80)
+                        : Image.asset(
+                            "imgs/avatar-default.png",
+                            width: 80,
+                          ),
+                  ),
+                ),
+                Text(
+                  userModel.isLogin
+                      ? userModel.user.login
+                      : GmLocalizations.of(context).login,
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          onTap: () {
+            if (!userModel.isLogin)
+              Navigator.of(context).pushNamed(ROUTE_LOGIN);
+          },
+        );
+      },
     );
   }
 
@@ -134,48 +177,6 @@ class MyDrawer extends StatelessWidget {
                 },
               ),
           ],
-        );
-      },
-    );
-  }
-
-  //construct menu
-  Widget _buildHeader() {
-    return Consumer<UserModel>(
-      builder: (BuildContext context, UserModel userModel, Widget child) {
-        return GestureDetector(
-          child: Container(
-            color: Theme.of(context).primaryColor,
-            padding: EdgeInsets.only(top: 40, bottom: 20),
-            child: Row(
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
-                  child: ClipOval(
-                    child: userModel.isLogin
-                        ? gmAvatar(userModel.user.avaterUrl, width: 80)
-                        : Image.asset(
-                            "imgs/avatar-default.png",
-                            width: 80,
-                          ),
-                  ),
-                ),
-                Text(
-                  userModel.isLogin
-                      ? userModel.user.login
-                      : GmLocalizations.of(context).login,
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.white,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          onTap: () {
-            if (!userModel.isLogin)
-              Navigator.of(context).pushNamed(ROUTE_LOGIN);
-          },
         );
       },
     );
