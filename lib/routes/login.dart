@@ -18,6 +18,10 @@ class _LoginRouteState extends State<LoginRoute> {
   TextEditingController _unameController = TextEditingController();
   TextEditingController _pwdController = TextEditingController();
 
+  FocusNode _userNameFocus = FocusNode();
+  FocusNode _passwordFocus = FocusNode();
+  FocusNode _blank = FocusNode();
+
   bool pwdShow = false;
   GlobalKey _formKey = new GlobalKey<FormState>();
   bool _nameAutoFocus = true;
@@ -40,60 +44,73 @@ class _LoginRouteState extends State<LoginRoute> {
       appBar: AppBar(title: Text(gm.login)),
       body: Padding(
         padding: const EdgeInsets.all(10.0),
-        child: Form(
-          key: _formKey,
-          autovalidate: true,
-          child: Column(
-            children: <Widget>[
-              TextFormField(
-                autofocus: _nameAutoFocus,
-                controller: _unameController,
-                decoration: InputDecoration(
-                  labelText: gm.userName,
-                  hintText: gm.userName,
-                  prefixIcon: Icon(Icons.person),
+        child: GestureDetector(
+          child: Form(
+            key: _formKey,
+            autovalidate: true,
+            child: Column(
+              children: <Widget>[
+                TextFormField(
+                  autofocus: _nameAutoFocus,
+                  focusNode: _userNameFocus,
+                  controller: _unameController,
+                  decoration: InputDecoration(
+                    labelText: gm.userName,
+                    hintText: gm.userName,
+                    prefixIcon: Icon(Icons.person),
+                  ),
+                  // check user name illegal or not
+                  validator: (v) {
+                    return v.trim().isNotEmpty ? null : gm.userNameRequired;
+                  },
+                  onEditingComplete: () =>
+                      FocusScope.of(context).requestFocus(_passwordFocus),
                 ),
-                // check user name illegal or not
-                validator: (v) {
-                  return v.trim().isNotEmpty ? null : gm.userNameRequired;
-                },
-              ),
-              TextFormField(
-                autofocus: !_nameAutoFocus,
-                controller: _pwdController,
-                decoration: InputDecoration(
-                  labelText: gm.password,
-                  hintText: gm.password,
-                  prefixIcon: Icon(Icons.lock),
-                  suffixIcon: IconButton(
-                    icon:
-                        Icon(pwdShow ? Icons.visibility_off : Icons.visibility),
-                    onPressed: () {
-                      setState(() {
-                        pwdShow = !pwdShow;
-                      });
-                    },
+                TextFormField(
+                  autofocus: !_nameAutoFocus,
+                  focusNode: _passwordFocus,
+                  controller: _pwdController,
+                  keyboardType: TextInputType.text,
+                  autocorrect: false,
+                  enableInteractiveSelection: false,
+                  key: _formKey,
+                  obscureText: !pwdShow,
+                  decoration: InputDecoration(
+                    labelText: gm.password,
+                    hintText: gm.password,
+                    prefixIcon: Icon(Icons.lock),
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                          !pwdShow ? Icons.visibility_off : Icons.visibility),
+                      onPressed: () {
+                        setState(() {
+                          pwdShow = !pwdShow;
+                        });
+                      },
+                    ),
+                  ),
+                  validator: (v) {
+                    return v.trim().isNotEmpty ? null : gm.passwordRequired;
+                  },
+                ),
+                Padding(
+                  padding: const EdgeInsets.only(top: 25),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints.expand(height: 55.0),
+                    child: RaisedButton(
+                      color: Theme.of(context).primaryColor,
+                      onPressed: _onLogin,
+                      textColor: Colors.white,
+                      child: Text(gm.login),
+                    ),
                   ),
                 ),
-                obscureText: !pwdShow,
-                validator: (v) {
-                  return v.trim().isNotEmpty ? null : gm.passwordRequired;
-                },
-              ),
-              Padding(
-                padding: const EdgeInsets.only(top: 25),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints.expand(height: 55.0),
-                  child: RaisedButton(
-                    color: Theme.of(context).primaryColor,
-                    onPressed: _onLogin,
-                    textColor: Colors.white,
-                    child: Text(gm.login),
-                  ),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
+          onTap: () {
+            FocusScope.of(context).requestFocus(_blank);
+          },
         ),
       ),
     );
