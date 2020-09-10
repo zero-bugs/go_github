@@ -13,9 +13,6 @@ Account _$AccountFromJson(Map<String, dynamic> json) {
     token: json['token'] as String,
     login: json['login'] as String,
     avatarUrl: json['avatarUrl'] as String,
-    gitlabId: json['gitlabId'] as int,
-    appPassword: json['appPassword'] as String,
-    accountId: json['accountId'] as String,
   );
 }
 
@@ -33,8 +30,5 @@ Map<String, dynamic> _$AccountToJson(Account instance) {
   writeNotNull('token', instance.token);
   writeNotNull('login', instance.login);
   writeNotNull('avatarUrl', instance.avatarUrl);
-  writeNotNull('gitlabId', instance.gitlabId);
-  writeNotNull('appPassword', instance.appPassword);
-  writeNotNull('accountId', instance.accountId);
   return val;
 }
