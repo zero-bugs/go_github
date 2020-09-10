@@ -1,1 +1,1 @@
-final String apiPrefix = 'https://api.github.com';
+final String apiGtBaseUrl = 'https://api.github.com';
