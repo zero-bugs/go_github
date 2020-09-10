@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:core';
 import 'dart:io';
 
@@ -197,4 +198,7 @@ class ThemeModel extends ChangeNotifier {
       },
     );
   }
+
+  static Timer _debounce;
+  String _selectedItem;
 }
