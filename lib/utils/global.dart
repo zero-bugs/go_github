@@ -1,4 +1,8 @@
+import 'dart:io';
+
 import 'package:fimber/fimber.dart';
+import 'package:flutter/material.dart';
+import 'package:gogithub/widgets/border_view.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class StorageKeys {
@@ -21,4 +25,11 @@ launchUrl(String url) async {
   } else {
     Fimber.w("url can not launch");
   }
+}
+
+class CommonStyle {
+  static const padding = EdgeInsets.symmetric(horizontal: 16, vertical: 12);
+  static final border = BorderView();
+  static const verticalGap = SizedBox(height: 18);
+  static final monospace = Platform.isIOS ? 'Menlo' : 'monospace'; // FIXME:
 }
