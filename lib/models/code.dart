@@ -4,7 +4,7 @@ import 'package:flutter_highlight/theme_map.dart';
 import 'package:gogithub/utils/global.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-class CodeModel extends ChangeNotifier {
+class CodeModel with ChangeNotifier {
   static var themes = themeMap.keys.toList();
   static const fontSizes = [12, 13, 14, 15, 16, 17, 18, 19, 20];
   static const fontFamilies = [
@@ -24,10 +24,10 @@ class CodeModel extends ChangeNotifier {
   String _fontFamily = 'JetBrains Mono';
 
   String get theme => _theme;
-  String get themeDart => _themeDark;
+  String get themeDark => _themeDark;
   int get fontSize => _fontSize;
   String get fontFamily => _fontFamily;
-  String get fontFamilyUser =>
+  String get fontFamilyUsed =>
       _fontFamily == 'System' ? CommonStyle.monospace : _fontFamily;
 
   Future<void> init() async {
