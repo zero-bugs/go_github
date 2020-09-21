@@ -1,6 +1,10 @@
 import 'package:flutter/cupertino.dart';
+import 'package:gogithub/utils/global.dart';
+import 'package:tuple/tuple.dart';
 
-class NotificationModel extends ChangeNotifier {
+import 'github.dart';
+
+class NotificationModel with ChangeNotifier {
   int _count = 0;
   int get count => _count;
 
@@ -8,4 +12,28 @@ class NotificationModel extends ChangeNotifier {
     _count = v;
     notifyListeners();
   }
+}
+
+class NotificationGroup {
+  String fullName;
+  List<GithubNotificationItem> items = [];
+
+  Tuple2<String, String> _repo;
+  String get owner {
+    if (_repo == null) {
+      _repo = parseRepositoryFullName(fullName);
+    }
+    return _repo.item1;
+  }
+
+  String get name {
+    if (_repo == null) {
+      _repo = parseRepositoryFullName(fullName);
+    }
+    return _repo.item2;
+  }
+
+  String get key => '_$hashCode';
+
+  NotificationGroup(this.fullName);
 }
