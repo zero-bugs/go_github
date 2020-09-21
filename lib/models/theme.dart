@@ -7,6 +7,7 @@ import 'package:fluro/fluro.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:gogithub/utils/global.dart';
+import 'package:gogithub/widgets/action_button.dart';
 import 'package:primer/primer.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -47,7 +48,27 @@ class AppBrightnessType {
   ];
 }
 
-class ThemeModel extends ChangeNotifier {
+class PickerItem<T> {
+  final T value;
+  final String text;
+  PickerItem(this.value, {@required this.text});
+}
+
+class PickerGroupItem<T> {
+  final T value;
+  final List<PickerItem<T>> items;
+  final Function(T value) onChange;
+  final Function(T value) onClose;
+
+  PickerGroupItem({
+    @required this.value,
+    @required this.items,
+    this.onChange,
+    this.onClose,
+  });
+}
+
+class ThemeModel with ChangeNotifier {
   int _theme;
   int get theme => _theme;
   bool get ready => _theme != null;
@@ -173,7 +194,7 @@ class ThemeModel extends ChangeNotifier {
     );
   }
 
-  Future<void> showConfirm(BuildContext context, Widget content) {
+  Future<bool> showConfirm(BuildContext context, Widget content) {
     return showCupertinoDialog(
       context: context,
       builder: (context) {
@@ -201,4 +222,75 @@ class ThemeModel extends ChangeNotifier {
 
   static Timer _debounce;
   String _selectedItem;
+
+  showPicker(BuildContext context, PickerGroupItem<String> groupItem) async {
+    await showCupertinoModalPopup(
+      context: context,
+      builder: (context) {
+        return Container(
+          height: 216,
+          child: CupertinoPicker(
+            backgroundColor: palette.background,
+            children: <Widget>[
+              for (var v in groupItem.items)
+                Text(v.text, style: TextStyle(color: palette.text)),
+            ],
+            itemExtent: 40,
+            scrollController: FixedExtentScrollController(
+                initialItem: groupItem.items
+                    .toList()
+                    .indexWhere((v) => v.value == groupItem.value)),
+            onSelectedItemChanged: (index) {
+              _selectedItem = groupItem.items[index].value;
+
+              if (groupItem.onChange != null) {
+                if (_debounce?.isActive ?? false) {
+                  _debounce.cancel();
+                }
+
+                _debounce = Timer(const Duration(milliseconds: 500), () {
+                  groupItem.onChange(_selectedItem);
+                });
+              }
+            },
+          ),
+        );
+      },
+    );
+    if (groupItem.onClose != null) {
+      groupItem.onClose(_selectedItem);
+    }
+  }
+
+  showActions(BuildContext context, List<ActionItem> actionItems) async {
+    if (actionItems == null) return;
+    final value = await showCupertinoModalPopup<int>(
+      context: context,
+      builder: (BuildContext context) {
+        return CupertinoActionSheet(
+          title: Text('Actions'),
+          actions: actionItems.asMap().entries.map((entry) {
+            return CupertinoActionSheetAction(
+              child: Text(entry.value.text),
+              isDestructiveAction: entry.value.isDestructiveAction,
+              onPressed: () {
+                Navigator.pop(context, entry.key);
+              },
+            );
+          }).toList(),
+          cancelButton: CupertinoActionSheetAction(
+            child: const Text('Cancel'),
+            isDefaultAction: true,
+            onPressed: () {
+              Navigator.pop(context);
+            },
+          ),
+        );
+      },
+    );
+
+    if (value != null) {
+      actionItems[value].onTap(context);
+    }
+  }
 }
