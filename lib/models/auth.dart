@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
+import 'package:dio/adapter.dart';
+import 'package:gogithub/exception/error_interceptor.dart';
 import 'package:gogithub/utils/request_serilizer.dart';
 import 'package:gql_http_link/gql_http_link.dart';
 import 'package:artemis/artemis.dart';
@@ -15,6 +17,8 @@ import 'package:nanoid/nanoid.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uni_links/uni_links.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart' as ioclient;
 
 import 'account.dart';
 
@@ -34,10 +38,10 @@ class AuthModel with ChangeNotifier {
     return _accounts[activeAccountIndex];
   }
 
-  String get token => activeAccount.token;
+  String get token => activeAccount?.token;
 
   static Dio dio = Dio(BaseOptions(
-    baseUrl: apiGtBaseUrl,
+    baseUrl: gtApiBaseUrl,
     headers: {
       HttpHeaders.acceptHeader: "application/vnd.github.squirrel-girl-preview,"
           "application/vnd.github.symmetra-preview+json, application/json",
@@ -47,8 +51,9 @@ class AuthModel with ChangeNotifier {
     receiveTimeout: 3000,
   ));
 
+  //https://docs.github.com/en/developers/apps/authorizing-oauth-apps#web-application-flow
   Future<String> _getTokenFromThirdPartServer(Uri uri) async {
-    final res = await dio.post(
+    final r = await dio.post(
       "https://git-touch-oauth.now.sh/api/token",
       data: json.encode({
         'client_id': clientId,
@@ -56,23 +61,50 @@ class AuthModel with ChangeNotifier {
         'state': _oauthState,
       }),
     );
-    return json.decode(res.data)['access_token'] as String;
+    Fimber.d(
+        "http code:${r.statusCode}, http message:${r.statusMessage}, http response: $r");
+
+    String tokenAcc = r?.data['access_token'] as String;
+    return tokenAcc;
   }
 
-  Future<dynamic> _graphQuery(String query, String token) async {
-    if (token == null || query == null) {
+  //https://docs.github.com/en/developers/apps/authorizing-oauth-apps#web-application-flow
+  Future<String> _getTokenFromLocalForTest(Uri uri) async {
+    final r = await dio.post(
+      gtHomeDomain + "/login/oauth/access_token",
+      data: json.encode({
+        'client_id': clientId,
+        'client_secret': clientSecret,
+        'code': uri.queryParameters['code'],
+        'redirect_uri': 'gogithub://login',
+        'state': _oauthState,
+      }),
+    );
+    Fimber.d(
+        "http code:${r.statusCode}, http message:${r.statusMessage}, http response: $r");
+    String tokenAcc = r?.data['access_token'] as String;
+    return tokenAcc;
+  }
+
+  Future<dynamic> graphQuery(String query, [String _token]) async {
+    if (_token == null) {
+      _token = token;
+    }
+    if (_token == null) {
       throw 'token is null';
     }
 
     var _options = Options();
-    _options.headers.addAll({HttpHeaders.authorizationHeader: 'token $token'});
+    _options.headers.addAll({HttpHeaders.authorizationHeader: 'token $_token'});
     final res = await dio.post(
-      apiGtBaseUrl + '/graphql',
+      gtApiBaseUrl + '/graphql',
       options: _options,
       data: json.encode({'query': query}),
     );
 
-    return json.decode(res.data);
+    Fimber.d("query data:${res.data}");
+    dynamic resData = res?.data['data'];
+    return resData;
   }
 
   _addAccount(Account account) async {
@@ -99,7 +131,14 @@ class AuthModel with ChangeNotifier {
     notifyListeners();
 
     // get token by code
-    final _token = _getTokenFromThirdPartServer(uri);
+    // final _token = _getTokenFromThirdPartServer(uri);
+    final _token = await _getTokenFromLocalForTest(uri);
+
+    Fimber.d("token:$_token");
+    await loginWithToken(_token ?? token);
+  }
+
+  Future<void> loginWithToken(String _token) async {
     try {
       String query = '''
 {
@@ -108,11 +147,11 @@ class AuthModel with ChangeNotifier {
     avatarUrl
   }
 }''';
-      dynamic queryData = await _graphQuery(query, _token ?? token);
+      dynamic queryData = await graphQuery(query, _token);
       await _addAccount(Account(
         platform: PlatformType.github,
         domain: gtHomeDomain,
-        token: token,
+        token: _token,
         login: queryData['viewer']['login'] as String,
         avatarUrl: queryData['viewer']['avatarUrl'] as String,
       ));
@@ -126,7 +165,20 @@ class AuthModel with ChangeNotifier {
     //添加过滤器
     // dio.interceptors.add("")
     //设置用户token
-    dio.options.headers[HttpHeaders.authorizationHeader] = "";
+    // dio.options.headers[HttpHeaders.authorizationHeader] = "";
+    dio.interceptors.add(ErrorInterceptor());
+
+    //不校验证书
+    (dio.httpClientAdapter as DefaultHttpClientAdapter).onHttpClientCreate =
+        (client) {
+      // client.findProxy = (uri) {
+      //   return "PROXY 10.95.249.53:8888";
+      // };
+
+      //代理工具会提供一个抓包的自签名证书，会通不过证书校验，所以我们禁用证书校验
+      client.badCertificateCallback =
+          (X509Certificate cert, String host, int port) => true;
+    };
 
     _sub = getUriLinksStream().listen(_onSchemeDetected, onError: (err) {
       Fimber.e('getUriLinkStream failed', ex: err);
@@ -152,20 +204,35 @@ class AuthModel with ChangeNotifier {
     if (_gqlClient == null) {
       _gqlClient = ArtemisClient.fromLink(
         HttpLink(
-          apiGtBaseUrl + 'graphql',
+          gtApiBaseUrl + '/graphql',
           defaultHeaders: {HttpHeaders.authorizationHeader: 'token $token'},
           serializer: GithubRequestSerializer(),
+          httpClient: constructNoTrustClient(),
         ),
       );
     }
     return _gqlClient;
   }
 
+  ioclient.IOClient constructNoTrustClient() {
+    Fimber.d("construct no trust certificate success");
+    var _httpClient = HttpClient();
+    _httpClient.badCertificateCallback =
+        ((X509Certificate cert, String host, int port) {
+      Fimber.d('graphql->x509 certificate $cert, host:$host, port:$port');
+      return true;
+    });
+    return ioclient.IOClient(_httpClient);
+  }
+
   GitHub _ghClient;
   GitHub get ghClient {
     if (token == null) return null;
     if (_ghClient == null) {
-      _ghClient = GitHub(auth: Authentication.withToken(token));
+      _ghClient = GitHub(
+        auth: Authentication.withToken(token),
+        client: constructNoTrustClient(),
+      );
     }
     return _ghClient;
   }
@@ -200,7 +267,7 @@ class AuthModel with ChangeNotifier {
     _oauthState = nanoid();
     var scope = Uri.encodeComponent('user,repo,read:org,notifications');
     launchUrl(
-      'https://github.com/login/oauth/authorize?client_id=$clientId&redirect_uri=gittouch://login&scope=$scope&state=$_oauthState',
+      'https://github.com/login/oauth/authorize?client_id=$clientId&redirect_uri=gogithub://login&scope=$scope&state=$_oauthState',
     );
   }
 
