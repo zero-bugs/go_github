@@ -52,7 +52,6 @@ dependencies:
   nanoid: ^0.0.6
   github: ^7.0.2
   artemis: ^5.1.0
-  github_trending: ^0.2.0
 
   gql_link: ^0.2.0
   tuple: ^1.0.2

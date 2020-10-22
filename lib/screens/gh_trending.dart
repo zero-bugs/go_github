@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_vector_icons/flutter_vector_icons.dart';
-import 'package:github_trending/github_trending.dart';
+import 'package:gogithub/models/gt_tr_developer.dart';
+import 'package:gogithub/models/gt_tr_repository.dart';
 import 'package:gogithub/models/theme.dart';
+import 'package:gogithub/spider/gt_trending_spider.dart';
 import 'package:gogithub/utils/global.dart';
 import 'package:gogithub/widgets/app_bar_title.dart';
 import 'package:gogithub/widgets/link.dart';
@@ -31,30 +33,30 @@ class GhTrendingScreen extends StatelessWidget {
             CommonStyle.border,
             activeTab == 0
                 ? [
-                    for (var v in payload.cast<GithubTrendingRepository>())
+                    for (var v in payload.cast<TrendingRepository>())
                       RepositoryItem.gh(
-                        owner: v.author,
+                        owner: v.owner,
                         avatarUrl: v.avatar,
                         name: v.name,
                         description: v.description,
                         starCount: v.stars ?? 0,
-                        forkCount: v.forks ?? 0,
-                        primaryLanguageName: v.language,
-                        primaryLanguageColor: v.languageColor,
-                        note: '${v.currentPeriodStars} stars today',
+                        forkCount: v.forkCount ?? 0,
+                        primaryLanguageName: v.primaryLanguage?.name,
+                        primaryLanguageColor: v.primaryLanguage?.color,
+                        note: '${v.stars}',
                         isPrivate: false,
                         isFork: false, // TODO:
                       )
                   ]
                 : [
-                    for (var v in payload.cast<GithubTrendingDeveloper>())
+                    for (var v in payload.cast<TrendingDeveloper>())
                       UserItem.gh(
                         login: v.username,
-                        name: v.name,
+                        name: v.nickname,
                         avatarUrl: v.avatar,
                         bio: Link(
                           url:
-                              '/github/${v.username}/${v.repo == null ? "" : v.repo.name}',
+                              '/github/${v.username}/${v.popularRepository == null ? "" : v.popularRepository.name}',
                           child: Row(
                             children: <Widget>[
                               Icon(
@@ -65,7 +67,7 @@ class GhTrendingScreen extends StatelessWidget {
                               SizedBox(width: 4),
                               Expanded(
                                   child: Text(
-                                '${v.username} / ${v.repo == null ? "" : v.repo.name}',
+                                '${v.username} / ${v.popularRepository == null ? "" : v.popularRepository.name}',
                                 style: TextStyle(
                                   fontSize: 17,
                                   color: theme.palette.secondaryText,
