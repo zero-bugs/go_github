@@ -39,7 +39,7 @@ class GhTrendingScreen extends StatelessWidget {
                         avatarUrl: v.avatar,
                         name: v.name,
                         description: v.description,
-                        starCount: v.stars ?? 0,
+                        starCount: v.starCount ?? 0,
                         forkCount: v.forkCount ?? 0,
                         primaryLanguageName: v.primaryLanguage?.name,
                         primaryLanguageColor: v.primaryLanguage?.color,
